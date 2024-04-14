@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -27,6 +29,15 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final CustomSuccessHandler customSuccessHandler;
     private final JWTUtil jwtUtil;
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+        roleHierarchy.setHierarchy("ROLE_A > ROLE_B\n"
+                + "ROLE_B > ROLE_C\n");
+        return roleHierarchy;
+    }
+
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,7 +65,8 @@ public class SecurityConfig {
                         configuration.setExposedHeaders(Collections.singletonList("Authorization"));
 
                         return configuration;
-                    }}));
+                    }
+                }));
 
         http
                 .csrf(AbstractHttpConfigurer::disable);
@@ -63,31 +75,25 @@ public class SecurityConfig {
         http
                 .httpBasic(AbstractHttpConfigurer::disable);
         http
-                .oauth2Login((oauth)->oauth
-                            .userInfoEndpoint((userInfoEndpoint)->userInfoEndpoint
-                            .userService(customOAuth2UserService))
-                            .
+                .oauth2Login((oauth) -> oauth
+                        .userInfoEndpoint((userInfoEndpoint) -> userInfoEndpoint
+                                .userService(customOAuth2UserService))
+                                .
 
-                    successHandler(customSuccessHandler));
+                        successHandler(customSuccessHandler));
         http
-                .authorizeHttpRequests((auth)->auth
-                            .requestMatchers("/","/oauth2/**","/login/**").
-
-                    permitAll()
-                        .
-
-                    anyRequest().
-
-                    authenticated());
+                .authorizeHttpRequests((auth) -> auth
+                        .requestMatchers("/", "/oauth2/**", "/login/**").permitAll()
+                        .anyRequest().authenticated());
         http
                 //재로그인 무한 루프 방지 하기 위해
                 .addFilterAfter(new
 
-                    JWTFilter(jwtUtil),OAuth2LoginAuthenticationFilter.class);
+                        JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class);
         http
-                .sessionManagement((session)->session
-                            .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
-                }
     }
+}
