@@ -1,10 +1,6 @@
 package com.rosoa0475.oauthjwt.jwt;
 
-import com.rosoa0475.oauthjwt.domain.UserEntity;
-import com.rosoa0475.oauthjwt.dto.CustomOAuth2User;
-import com.rosoa0475.oauthjwt.dto.KakaoResponse;
-import com.rosoa0475.oauthjwt.dto.OAuth2Response;
-import com.rosoa0475.oauthjwt.dto.UserDTO;
+import com.rosoa0475.oauthjwt.oauth2.custom.CustomOAuth2User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -46,12 +42,9 @@ public class JWTFilter extends OncePerRequestFilter {
             return;
         }
 
-        String nickname = jwtUtil.getNickname(token);
+        Long userId = jwtUtil.getUserId(token);
         String role = jwtUtil.getRole(token);
-        UserDTO userDTO = new UserDTO();
-        userDTO.setNickname(nickname);
-        userDTO.setRole(role);
-        CustomOAuth2User customOAuth2User = new CustomOAuth2User(userDTO);
+        CustomOAuth2User customOAuth2User = new CustomOAuth2User(userId, role);
         Authentication auth = new UsernamePasswordAuthenticationToken(customOAuth2User, null, customOAuth2User.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
         filterChain.doFilter(request, response);

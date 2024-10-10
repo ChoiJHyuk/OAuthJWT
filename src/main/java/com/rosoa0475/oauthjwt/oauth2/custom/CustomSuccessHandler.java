@@ -1,6 +1,5 @@
-package com.rosoa0475.oauthjwt.oauth2;
+package com.rosoa0475.oauthjwt.oauth2.custom;
 
-import com.rosoa0475.oauthjwt.dto.CustomOAuth2User;
 import com.rosoa0475.oauthjwt.jwt.JWTUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -9,7 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,24 +17,23 @@ import java.util.Iterator;
 
 @Component
 @RequiredArgsConstructor
-public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JWTUtil jwtUtil;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         CustomOAuth2User customOAuth2User = (CustomOAuth2User) authentication.getPrincipal();
-        String nickname = customOAuth2User.getName();
+        Long userId = customOAuth2User.getUserId();
 
         Collection<? extends GrantedAuthority> authorities = customOAuth2User.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority authority = iterator.next();
         String role = authority.getAuthority();
 
-        String token = jwtUtil.createJwt(nickname,role, 60*60*60L);
-        //프론트에 jwt 토큰 던져주는 방법 하이퍼링킹 방식이므로 헤더에 써주면 안 된다.
+        String token = jwtUtil.createJwt(userId,role, 600*600*600L);
         response.addCookie(createCookie("Authorization", token));
-        response.sendRedirect("http://localhost:8080/");
+//        response.sendRedirect("http://localhost:8080/");
 
     }
 

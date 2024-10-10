@@ -2,8 +2,8 @@ package com.rosoa0475.oauthjwt.config;
 
 import com.rosoa0475.oauthjwt.jwt.JWTFilter;
 import com.rosoa0475.oauthjwt.jwt.JWTUtil;
-import com.rosoa0475.oauthjwt.oauth2.CustomSuccessHandler;
-import com.rosoa0475.oauthjwt.service.CustomOAuth2UserService;
+import com.rosoa0475.oauthjwt.oauth2.custom.CustomOAuth2UserService;
+import com.rosoa0475.oauthjwt.oauth2.custom.CustomSuccessHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +14,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -29,6 +31,8 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final CustomSuccessHandler customSuccessHandler;
     private final JWTUtil jwtUtil;
+    private final ClientRegistrationRepository clientRegistrationRepository;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Bean
     public RoleHierarchy roleHierarchy() {
@@ -78,12 +82,12 @@ public class SecurityConfig {
                 .oauth2Login((oauth) -> oauth
                         .userInfoEndpoint((userInfoEndpoint) -> userInfoEndpoint
                                 .userService(customOAuth2UserService))
-                                .
-
-                        successHandler(customSuccessHandler));
+                        .authorizedClientService(authorizedClientService)
+                        .successHandler(customSuccessHandler)
+                        .clientRegistrationRepository(clientRegistrationRepository));
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/", "/oauth2/**", "/login/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .anyRequest().authenticated());
         http
                 //재로그인 무한 루프 방지 하기 위해
